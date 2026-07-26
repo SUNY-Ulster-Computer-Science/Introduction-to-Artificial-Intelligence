@@ -1,0 +1,7 @@
+[project]
+name = "suny-ulster-csc-160"
+version = "0.1.0"
+dependencies = [
+    "torch",
+    "torchvision",
+]
