@@ -89,47 +89,64 @@ class BaseMNISTClassifier(MLModule):
         batch_size = int(args[1]) if len(args) > 1 else 64
         lr = float(args[2]) if len(args) > 2 else 1.0
 
+        # Get the training dataset split
         train_loader = _get_dataloader("train", batch_size=batch_size, shuffle=True)
 
         model = self._load_model()
+        # Object used to adjust the model's parameters through gradient decent
         optimizer = torch.optim.Adadelta(model.parameters(), lr=lr)
+        # Decays the learning date over time to solidify early learning
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
-        model.train()
+        model.train()  # Set model to train mode
         epoch_bar = tqdm.tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch", position=0)
         for epoch in epoch_bar:
             batch_bar = tqdm.tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}", unit="batch", position=1, leave=False)
             for data, target in batch_bar:
+                # Send data and target to device
                 data, target = data.to(DEVICE), target.to(DEVICE)
+                # Reset gradients to zero so the model only learns based off of the current sample
                 optimizer.zero_grad()
+                # Inference the model to get its prediction
                 output = model(data)
+                # Calculate the negative log likelihood loss of the model's prediction versus the target
                 loss = F.nll_loss(output, target)
+                # Propagate the loss error backward through the model's parameters to calculate pre-parameter gradients
                 loss.backward()
+                # Update the model's weights by one step of gradient decent based on propagated loss gradients
                 optimizer.step()
+
                 batch_bar.set_postfix(loss=f"{loss.item():.4f}")
+            # Lower the learning rate based on the training schedule
             scheduler.step()
             epoch_bar.set_postfix(loss=f"{loss.item():.4f}")
 
         self._model_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), self._model_path)
+        torch.save(model.state_dict(), self._model_path)  # save model weights to disk for loading later
         print(f"Model saved to {self._model_path}")
 
     def test(self, args: list[str]) -> None:
         batch_size = int(args[0]) if len(args) > 0 else 1000
 
+        # Get the testing dataset split
         test_loader = _get_dataloader("test", batch_size=batch_size, shuffle=False)
 
         model = self._load_model()
-        model.eval()
+        model.eval()  # Set model to evaluation mode
 
         test_loss = 0.0
         correct = 0
-        with torch.no_grad():
+        with torch.inference_mode():  # Tell PyTorch that it does not need to calculate gradients
             for data, target in tqdm.tqdm(test_loader, desc="Evaluating", unit="batch"):
+                # Send data and target to device
                 data, target = data.to(DEVICE), target.to(DEVICE)
+                # Inference the model to get its prediction
                 output = model(data)
+                # Add the negative log likelihood loss of the model's prediction versus the target to the sum
                 test_loss += F.nll_loss(output, target, reduction="sum").item()
+                # Get the most likely element within the prediction (the numerical result 0-9)
                 pred = output.argmax(dim=1, keepdim=True)
+                # Check if the model's prediction exactly matches the target label
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         n = len(test_loader.dataset)
@@ -150,14 +167,19 @@ class BaseMNISTClassifier(MLModule):
             print(f"Error: image not found: {image_path}", file=sys.stderr)
             sys.exit(1)
 
+        # Resize and normalize input image into a format compatible with MNIST
+        # Expects a white number on a black background
         image = Image.open(image_path).convert("L").resize((28, 28))
         tensor = _convert_and_normalize(image).unsqueeze(0).to(DEVICE)
 
         model = self._load_model()
-        model.eval()
-        with torch.no_grad():
+        model.eval()  # Set model to evaluation mode
+        with torch.inference_mode():
+            # Inference the model to get its prediction
             output = model(tensor)
+            # Get the most likely element within the prediction (the numerical result 0-9)
             pred = int(output.argmax(dim=1).item())
+            # Get the model's confidence by transforming og probabilities back into probabilities
             confidence = float(output.exp().max().item())
 
         print(f"Predicted digit: {pred} (confidence: {confidence * 100:.2f}%)")
