@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import sys
 from pathlib import Path
 
@@ -162,13 +163,21 @@ class BaseMNISTClassifier(MLModule):
         print(f"Predicted digit: {pred} (confidence: {confidence * 100:.2f}%)")
 
     def view(self, args: list[str]) -> None:
+        import matplotlib.pyplot as plt
         from torchview import draw_graph
 
         model = self._load_model()
-        output_path = Path(args[0]) if len(args) > 0 else Path.cwd() / "model_architecture"
         dpi = int(args[1]) if len(args) > 1 else 300
 
         graph = draw_graph(model, input_size=(1, 1, 28, 28), device=DEVICE, expand_nested=True)
         graph.visual_graph.attr(dpi=str(dpi))
-        graph.visual_graph.render(str(output_path), format="png", cleanup=True)
-        print(f"Model architecture diagram saved to {output_path}.png")
+        png_bytes = graph.visual_graph.pipe(format="png")  # in-memory, no file written
+        image = Image.open(io.BytesIO(png_bytes))
+
+        plt.figure(
+            num=f"{self._model_class.__name__} Architecture", figsize=(image.width / dpi, image.height / dpi), dpi=dpi
+        )
+        plt.imshow(image)
+        plt.axis("off")
+        plt.tight_layout()
+        plt.show()

@@ -9,7 +9,8 @@ dependencies = [
     "torchview",
     "pillow",
     "datasets",
-    "tqdm"
+    "tqdm",
+    "matplotlib"
 ]
 
 [tool.ruff]
