@@ -37,4 +37,4 @@ class ConvNet(nn.Module):
 
 class MNISTClassifier(BaseMNISTClassifier):
     _model_class: type = ConvNet
-    _module_dir: Path = MODULE_DIR
+    _model_path: Path = MODULE_DIR / "cnn_mnist.pt"

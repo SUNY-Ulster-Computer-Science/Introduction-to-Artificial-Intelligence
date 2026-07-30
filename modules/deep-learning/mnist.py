@@ -30,4 +30,4 @@ class NeuralNet(nn.Module):
 
 class MNISTClassifier(BaseMNISTClassifier):
     _model_class: type = NeuralNet
-    _module_dir: Path = MODULE_DIR
+    _model_path: Path = MODULE_DIR / "dnn_mnist.pt"

@@ -62,22 +62,21 @@ class BaseMNISTClassifier(MLModule):
     """CNN digit classifier for MNIST. Implements all four runner commands."""
 
     _model_class: type = None
-    _module_dir: Path = None
+    _model_path: Path = None
 
     def __init__(self) -> None:
         self._model: nn.Module | None = None
-        self.model_path = self._module_dir / "mnist_model.pt"
 
     def _load_model(self) -> nn.Module:
         if self._model is not None:
             return self._model
 
         model = self._model_class().to(DEVICE)
-        if self.model_path.exists():
-            model.load_state_dict(torch.load(self.model_path, map_location=DEVICE))
+        if self._model_path.exists():
+            model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
         else:
             print(
-                f"Warning: no trained weights found at {self.model_path}. "
+                f"Warning: no trained weights found at {self._model_path}. "
                 "Using randomly initialized weights. Run 'train' first.",
                 file=sys.stderr,
             )
@@ -110,9 +109,9 @@ class BaseMNISTClassifier(MLModule):
             scheduler.step()
             epoch_bar.set_postfix(loss=f"{loss.item():.4f}")
 
-        self.model_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), self.model_path)
-        print(f"Model saved to {self.model_path}")
+        self._model_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), self._model_path)
+        print(f"Model saved to {self._model_path}")
 
     def test(self, args: list[str]) -> None:
         batch_size = int(args[0]) if len(args) > 0 else 1000
@@ -166,7 +165,7 @@ class BaseMNISTClassifier(MLModule):
         from torchview import draw_graph
 
         model = self._load_model()
-        output_path = Path(args[0]) if len(args) > 0 else self._module_dir / "mnist_architecture"
+        output_path = Path(args[0]) if len(args) > 0 else Path.cwd() / "model_architecture"
         dpi = int(args[1]) if len(args) > 1 else 300
 
         graph = draw_graph(model, input_size=(1, 1, 28, 28), device=DEVICE, expand_nested=True)
