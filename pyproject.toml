@@ -8,6 +8,8 @@ dependencies = [
     "graphviz",
     "torchview",
     "pillow",
+    "datasets",
+    "tqdm"
 ]
 
 [tool.ruff]
