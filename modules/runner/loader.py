@@ -10,7 +10,6 @@ from types import ModuleType
 
 from modules.runner.base import MLModule
 
-
 COMMANDS = ("train", "test", "inference", "view", "help")
 
 # Directories skipped when scanning for modules: the runner's own package, plus common non-project directories that
@@ -27,7 +26,7 @@ class NoModuleClassFound(ModuleResolutionError):
 
 
 def resolve_module_path(dotted_path: str, base_dir: Path) -> Path:
-    """Convert a dotted path like "deep-learning.mnist" into a file path like "<base_dir>/deep-learning/mnist.py".
+    """Convert a dotted path like "modules.deep-learning.mnist" into a file path like "modules/deep-learning/mnist.py".
 
     Args:
         dotted_path: The dotted module path to resolve.
@@ -49,7 +48,7 @@ def resolve_module_path(dotted_path: str, base_dir: Path) -> Path:
 
 
 def load_module(dotted_path: str, base_dir: Path | None = None) -> ModuleType:
-    """Load a module file given its dotted path, e.g. "deep-learning.mnist".
+    """Load a module file given its dotted path, e.g. "modules.deep-learning.mnist".
 
     Args:
         dotted_path: The dotted module path to load.
@@ -109,9 +108,9 @@ def find_module_class(module: ModuleType, dotted_path: str) -> type[MLModule]:
         obj
         for obj in vars(module).values()
         if inspect.isclass(obj)
-           and issubclass(obj, MLModule)
-           and obj is not MLModule
-           and obj.__module__ == module.__name__
+        and issubclass(obj, MLModule)
+        and obj is not MLModule
+        and obj.__module__ == module.__name__
     ]
 
     if not candidates:
