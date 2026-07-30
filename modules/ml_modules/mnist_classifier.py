@@ -194,7 +194,7 @@ class BaseMNISTClassifier(MLModule):
 
         graph = draw_graph(model, input_size=(1, 1, 28, 28), device=DEVICE, expand_nested=True)
         graph.visual_graph.attr(dpi=str(dpi))
-        png_bytes = graph.visual_graph.pipe(format="png")  # in-memory, no file written
+        png_bytes = graph.visual_graph.pipe(format="png")
         image = Image.open(io.BytesIO(png_bytes))
 
         plt.figure(
