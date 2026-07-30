@@ -8,12 +8,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
-from datasets import load_dataset
 from PIL import Image
+from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from modules.runner.base import MLModule
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -189,7 +190,7 @@ class BaseMNISTClassifier(MLModule):
         from torchview import draw_graph
 
         model = self._load_model()
-        dpi = int(args[1]) if len(args) > 1 else 300
+        dpi = int(args[0]) if len(args) > 0 else 300
 
         graph = draw_graph(model, input_size=(1, 1, 28, 28), device=DEVICE, expand_nested=True)
         graph.visual_graph.attr(dpi=str(dpi))
