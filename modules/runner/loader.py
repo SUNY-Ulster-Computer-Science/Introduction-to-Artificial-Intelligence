@@ -26,7 +26,7 @@ class NoModuleClassFound(ModuleResolutionError):
 
 
 def resolve_module_path(dotted_path: str, base_dir: Path) -> Path:
-    """Convert a dotted path like "modules.deep-learning.mnist" into a file path like "modules/deep-learning/mnist.py".
+    """Convert a dotted path like "modules.deep-learning.mnist" into a file path like "modules/deep-learning/dnn.py".
 
     Args:
         dotted_path: The dotted module path to resolve.

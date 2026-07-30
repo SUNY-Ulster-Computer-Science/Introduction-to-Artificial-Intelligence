@@ -116,8 +116,8 @@ class BaseMNISTClassifier(MLModule):
                 loss.backward()
                 # Update the model's weights by one step of gradient decent based on propagated loss gradients
                 optimizer.step()
-
                 batch_bar.set_postfix(loss=f"{loss.item():.4f}")
+
             # Lower the learning rate based on the training schedule
             scheduler.step()
             epoch_bar.set_postfix(loss=f"{loss.item():.4f}")

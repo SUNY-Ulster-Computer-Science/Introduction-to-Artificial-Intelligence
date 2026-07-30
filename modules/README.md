@@ -11,7 +11,7 @@ python3 -m modules.runner <command> <module.path> [args...]
 ```
 
 - `<command>` is one of: `inference`, `test`, `train`, `view`
-- `<module.path>` is a dotted path resolved to a `.py` file relative to the current directory. To run the file `computer-vision/mnist.py`, use `modules.deep-learning.mnist`.
+- `<module.path>` is a dotted path resolved to a `.py` file relative to the current directory. To run the file `computer-vision/cnn.py`, use `modules.deep-learning.mnist`.
 - `[args...]` are passed straight through to the module's command function.
 
 ### Examples
