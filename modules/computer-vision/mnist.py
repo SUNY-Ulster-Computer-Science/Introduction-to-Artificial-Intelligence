@@ -22,7 +22,7 @@ MODEL_PATH = MODULE_DIR / "mnist_model.pt"
 
 HF_DATASET_ID = "ylecun/mnist"
 
-TRANSFORM = transforms.Compose(
+_convert_and_normalize = transforms.Compose(
     [
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,)),  # Mean and stddev of MNIST training dataset
@@ -55,7 +55,7 @@ class Net(nn.Module):
 def _transform_batch(batch: dict) -> dict:
     """Applied lazily per-batch by `with_transform`, converts the HF dataset's PIL images into normalized tensors."""
 
-    batch["pixel_values"] = [TRANSFORM(img.convert("L")) for img in batch["image"]]
+    batch["pixel_values"] = [_convert_and_normalize(img.convert("L")) for img in batch["image"]]
     return batch
 
 
@@ -173,7 +173,7 @@ class MNISTClassifier(MLModule):
             sys.exit(1)
 
         image = Image.open(image_path).convert("L").resize((28, 28))
-        tensor = TRANSFORM(image).unsqueeze(0).to(DEVICE)
+        tensor = _convert_and_normalize(image).unsqueeze(0).to(DEVICE)
 
         model = self._load_model()
         model.eval()
