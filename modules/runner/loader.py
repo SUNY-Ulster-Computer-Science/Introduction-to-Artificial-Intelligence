@@ -14,7 +14,7 @@ COMMANDS = ("train", "test", "inference", "view", "help")
 
 # Directories skipped when scanning for modules: the runner's own package, plus common non-project directories that
 # shouldn't be treated as modules.
-_SKIP_DIR_NAMES = {"runner", "__pycache__", ".git", ".venv", "venv", "env"}
+_SKIP_DIR_NAMES = {"runner", "__pycache__", ".git", ".venv", "venv", "env", "ml_modules"}
 
 
 class ModuleResolutionError(Exception):
