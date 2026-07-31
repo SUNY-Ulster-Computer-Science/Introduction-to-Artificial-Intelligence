@@ -1,10 +1,7 @@
 import argparse
 import io
-import json
 import math
-import re
 import sys
-from collections import Counter
 from pathlib import Path
 
 import torch
@@ -132,7 +129,7 @@ class BaseWikitextRunner(MLModule):
         parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
         args = parser.parse_args(args)
 
-        # Build the vocabulary from the training split only.
+        # Build the tokenizer from the training split only.
         if not self._tokenizer_path.exists():
             raw_train = load_dataset(self._dataset_id, self._dataset_config, split="train")
             tokenizer = self._train_tokenizer(raw_train[self._text_column])
@@ -180,7 +177,7 @@ class BaseWikitextRunner(MLModule):
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=64)
         args = parser.parse_args(args)
 
-        self._load_tokenizer()  # Fail fast with a clear error if train hasn't run yet
+        self._load_tokenizer()
         test_loader = self._get_dataloader("test", batch_size=args.batch_size, shuffle=False)
 
         model = self._load_model()
@@ -214,8 +211,6 @@ class BaseWikitextRunner(MLModule):
         args = parser.parse_args(args)
 
         tokenizer = self._load_tokenizer()
-        inv_vocab = {idx: tok for tok, idx in tokenizer.items()}
-
         model = self._load_model()
         model.eval()  # Set model to evaluation mode
 

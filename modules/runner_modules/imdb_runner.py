@@ -1,9 +1,6 @@
 import argparse
 import io
-import json
-import re
 import sys
-from collections import Counter
 from pathlib import Path
 
 import torch
@@ -15,20 +12,9 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from modules.runner.base import MLModule
+from modules.runner_models.word_tokenizer import WordTokenizer
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-PAD_TOKEN = "<pad>"
-UNK_TOKEN = "<unk>"
-
-# Very simple word tokenizer: lowercase, keep runs of letters/apostrophes.
-_TOKEN_RE = re.compile(r"[a-z']+")
-
-
-def _tokenize(text: str) -> list[str]:
-    """A simple tokenizer which splits by words and apostrophes."""
-
-    return _TOKEN_RE.findall(text.lower())
 
 
 class BaseIMDBRunner(MLModule):
@@ -36,7 +22,7 @@ class BaseIMDBRunner(MLModule):
 
     _model_class: type = None
     _model_path: Path = None
-    _vocab_path: Path = None
+    _tokenizer_path: Path = None
     _dataset_id: str = "stanfordnlp/imdb"
     _text_column: str = "text"
     _label_column: str = "label"
@@ -46,45 +32,33 @@ class BaseIMDBRunner(MLModule):
 
     def __init__(self) -> None:
         self._model: nn.Module | None = None
-        self._vocab: dict[str, int] | None = None
+        self._tokenizer: WordTokenizer | None = None
 
-    def _get_vocab(self) -> dict[str, int]:
-        """Fetch the vocab JSON if it is already built."""
+    def _load_tokenizer(self) -> WordTokenizer:
+        """Fetch the tokenizer from disk if it is already built."""
 
-        if self._vocab is not None:
-            return self._vocab
-        if not self._vocab_path.exists():
-            raise FileNotFoundError(f"No vocabulary found at {self._vocab_path}. Run 'train' first.")
-        self._vocab = json.loads(self._vocab_path.read_text())
-        return self._vocab
+        if self._tokenizer is not None:
+            return self._tokenizer
+        if not self._tokenizer_path.exists():
+            raise FileNotFoundError(f"No vocabulary found at {self._tokenizer_path}. Run 'train' first.")
+        self._tokenizer = WordTokenizer.load(self._tokenizer_path)
+        return self._tokenizer
 
-    def _build_vocab(self, texts: list[str]) -> dict[str, int]:
+    def _train_tokenizer(self, lines: list[str]) -> WordTokenizer:
         """Builds a vocabulary based on the contents of the dataset."""
 
-        counts = Counter()
-        for text in tqdm.tqdm(texts, desc="Building vocabulary", unit="doc"):
-            counts.update(_tokenize(text))
-
-        vocab = {PAD_TOKEN: 0, UNK_TOKEN: 1}
-        for token, _ in counts.most_common(self._max_vocab_size - len(vocab)):
-            vocab[token] = len(vocab)
-        return vocab
-
-    def _encode(self, text: str) -> list[int]:
-        """Tokenize and pad inputs."""
-
-        vocab = self._get_vocab()
-        # Map each token to its vocab id (falling back to <unk> for words never seen during training), then truncate/pad
-        # to a fixed length so every example in a batch has the same shape.
-        # Left-pad so the model's final hidden states are not reading pad tokens at the right-most tokens.
-        ids = [vocab.get(tok, vocab[UNK_TOKEN]) for tok in _tokenize(text)[: self._max_seq_len]]
-        ids = [vocab[PAD_TOKEN]] * (self._max_seq_len - len(ids)) + ids
-        return ids
+        tokenizer = WordTokenizer()
+        tokenizer.train(lines, self._max_vocab_size)
+        return tokenizer
 
     def _collate(self, examples: list[dict]) -> tuple[torch.Tensor, torch.Tensor]:
         """Collate the input examples into token ids and labels."""
 
-        input_ids = torch.tensor([self._encode(e[self._text_column]) for e in examples], dtype=torch.long)
+        id_list = []
+        for e in examples:
+            id_list.append(self._tokenizer.encode(e[self._text_column], self._max_seq_len, True))
+
+        input_ids = torch.tensor(id_list, dtype=torch.long)
         labels = torch.tensor([e[self._label_column] for e in examples], dtype=torch.long)
         return input_ids, labels
 
@@ -107,8 +81,8 @@ class BaseIMDBRunner(MLModule):
         if self._model is not None:
             return self._model
 
-        vocab = self._get_vocab()
-        model = self._model_class(vocab_size=len(vocab), num_classes=len(self._label_names)).to(DEVICE)
+        tokenizer = self._load_tokenizer()
+        model = self._model_class(vocab_size=tokenizer.vocab_size, num_classes=len(self._label_names)).to(DEVICE)
         if load_weights:
             if self._model_path.exists():
                 model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
@@ -128,15 +102,13 @@ class BaseIMDBRunner(MLModule):
         parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
         args = parser.parse_args(args)
 
-        # Build (or reuse) the vocabulary from the training split only.
-        if self._vocab_path.exists():
-            self._vocab = json.loads(self._vocab_path.read_text())
-        else:
+        # Build the tokenizer from the training split only.
+        if not self._tokenizer_path.exists():
             raw_train = load_dataset(self._dataset_id, split="train")
-            self._vocab = self._build_vocab(raw_train[self._text_column])
-            self._vocab_path.parent.mkdir(parents=True, exist_ok=True)
-            self._vocab_path.write_text(json.dumps(self._vocab))
-            print(f"Vocabulary of {len(self._vocab)} tokens saved to {self._vocab_path}")
+            tokenizer = self._train_tokenizer(raw_train[self._text_column])
+            self._tokenizer_path.parent.mkdir(parents=True, exist_ok=True)
+            tokenizer.save(self._tokenizer_path)
+            print(f"Vocabulary of {tokenizer.vocab_size} tokens saved to {self._tokenizer_path}")
 
         train_loader = self._get_dataloader("train", batch_size=args.batch_size, shuffle=True)
 
@@ -177,7 +149,7 @@ class BaseIMDBRunner(MLModule):
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=256)
         args = parser.parse_args(args)
 
-        self._get_vocab()  # Fail fast with a clear error if train hasn't run yet
+        self._load_tokenizer()
         test_loader = self._get_dataloader("test", batch_size=args.batch_size, shuffle=False)
 
         model = self._load_model()
@@ -208,9 +180,11 @@ class BaseIMDBRunner(MLModule):
         parser.add_argument("text", type=str, help="Text to classify")
         args = parser.parse_args(args)
 
+        tokenizer = self._load_tokenizer()
         model = self._load_model()
         model.eval()  # Set model to evaluation mode
-        input_ids = torch.tensor([self._encode(args.text)], dtype=torch.long).to(DEVICE)
+
+        input_ids = torch.tensor(tokenizer.encode(args.text), dtype=torch.long).to(DEVICE)
         with torch.inference_mode():
             # Inference the model to get its prediction
             output = model(input_ids)
