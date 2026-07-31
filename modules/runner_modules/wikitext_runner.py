@@ -141,7 +141,7 @@ class BaseWikitextRunner(MLModule):
         return model
 
     def train(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-e", "--epochs", type=int, help="The number of epochs to train for", default=3)
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for training", default=64)
         parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
@@ -193,7 +193,7 @@ class BaseWikitextRunner(MLModule):
         print(f"Model saved to {self._model_path}")
 
     def test(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=64)
         args = parser.parse_args(args)
 
@@ -224,7 +224,7 @@ class BaseWikitextRunner(MLModule):
         print(f"Test set: Average loss: {avg_loss:.4f}, Perplexity: {perplexity:.2f}")
 
     def inference(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("prompt", type=str, help="The prompt to generate from")
         parser.add_argument("-n", "--num-tokens", type=int, help="Number of tokens to generate", default=50)
         args = parser.parse_args(args)
@@ -260,7 +260,7 @@ class BaseWikitextRunner(MLModule):
         import matplotlib.pyplot as plt
         from torchview import draw_graph
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-d", "--dpi", type=int, help="The DPI for the output image", default=300)
         args = parser.parse_args(args)
 

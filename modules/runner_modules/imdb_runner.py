@@ -122,7 +122,7 @@ class BaseIMDBRunner(MLModule):
         return model
 
     def train(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-e", "--epochs", type=int, help="The number of epochs to train for", default=3)
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for training", default=64)
         parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
@@ -173,7 +173,7 @@ class BaseIMDBRunner(MLModule):
         print(f"Model saved to {self._model_path}")
 
     def test(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=256)
         args = parser.parse_args(args)
 
@@ -204,7 +204,7 @@ class BaseIMDBRunner(MLModule):
         print(f"Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{n} ({accuracy:.2f}%)")
 
     def inference(self, args: list[str]) -> None:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("text", type=str, help="Text to classify")
         args = parser.parse_args(args)
 
@@ -226,7 +226,7 @@ class BaseIMDBRunner(MLModule):
         import matplotlib.pyplot as plt
         from torchview import draw_graph
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("-d", "--dpi", type=int, help="The DPI for the output image", default=300)
         args = parser.parse_args(args)
 
