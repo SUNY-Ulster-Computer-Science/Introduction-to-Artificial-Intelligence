@@ -8,13 +8,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
-from PIL import Image
 from datasets import load_dataset
+from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from modules.runner.base import MLModule
-
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -69,19 +68,20 @@ class BaseMNISTClassifier(MLModule):
     def __init__(self) -> None:
         self._model: nn.Module | None = None
 
-    def _load_model(self) -> nn.Module:
+    def _load_model(self, load_weights: bool = True) -> nn.Module:
         if self._model is not None:
             return self._model
 
         model = self._model_class().to(DEVICE)
-        if self._model_path.exists():
-            model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
-        else:
-            print(
-                f"Warning: no trained weights found at {self._model_path}. "
-                "Using randomly initialized weights. Run 'train' first.",
-                file=sys.stderr,
-            )
+        if load_weights:
+            if self._model_path.exists():
+                model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
+            else:
+                print(
+                    f"Warning: no trained weights found at {self._model_path}. "
+                    "Using randomly initialized weights. Run 'train' first.",
+                    file=sys.stderr,
+                )
         self._model = model
         return model
 
@@ -93,7 +93,7 @@ class BaseMNISTClassifier(MLModule):
         # Get the training dataset split
         train_loader = _get_dataloader("train", batch_size=batch_size, shuffle=True)
 
-        model = self._load_model()
+        model = self._load_model(load_weights=False)
         # Object used to adjust the model's parameters through gradient decent
         optimizer = torch.optim.Adadelta(model.parameters(), lr=lr)
         # Decays the learning date over time to solidify early learning

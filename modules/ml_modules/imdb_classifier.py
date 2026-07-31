@@ -101,20 +101,21 @@ class BaseIMDBClassifier(MLModule):
         dataset = load_dataset(self._dataset_id, split=split)
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=self._collate)
 
-    def _load_model(self) -> nn.Module:
+    def _load_model(self, load_weights: bool = True) -> nn.Module:
         if self._model is not None:
             return self._model
 
         vocab = self._get_vocab()
         model = self._model_class(vocab_size=len(vocab), num_classes=len(self._label_names)).to(DEVICE)
-        if self._model_path.exists():
-            model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
-        else:
-            print(
-                f"Warning: no trained weights found at {self._model_path}. "
-                "Using randomly initialized weights. Run 'train' first.",
-                file=sys.stderr,
-            )
+        if load_weights:
+            if self._model_path.exists():
+                model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
+            else:
+                print(
+                    f"Warning: no trained weights found at {self._model_path}. "
+                    "Using randomly initialized weights. Run 'train' first.",
+                    file=sys.stderr,
+                )
         self._model = model
         return model
 
@@ -135,7 +136,7 @@ class BaseIMDBClassifier(MLModule):
 
         train_loader = self._get_dataloader("train", batch_size=batch_size, shuffle=True)
 
-        model = self._load_model()
+        model = self._load_model(load_weights=False)
 
         # Use Adam optimizer to even out gradients through RNN passes, Adam also schedules the learning rate
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
