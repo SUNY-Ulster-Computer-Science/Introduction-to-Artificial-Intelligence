@@ -11,23 +11,23 @@ python3 -m modules.runner <command> <module.path> [args...]
 ```
 
 - `<command>` is one of: `inference`, `test`, `train`, `view`
-- `<module.path>` is a dotted path resolved to a `.py` file relative to the current directory. To run the file `computer-vision/cnn_mnist.py`, use `modules.computer-vision.cnn_mnist`.
+- `<module.path>` is a dotted path resolved to a `.py` file relative to the current directory. To run the file `cv/cnn_mnist.py`, use `modules.computer-vision.cnn_mnist`.
 - `[args...]` are passed straight through to the module's command function.
 
 ### Examples
 
 ```bash
 # Run inference on an image
-python3 -m modules.runner inference modules.computer-vision.cnn_mnist /path/to/image.png
+python3 -m modules.runner inference modules.cv.cnn_mnist /path/to/image.png
 
 # Train the model (epochs=5, batch_size=64, lr=1.0)
-python3 -m modules.runner train modules.computer-vision.cnn_mnist 5 64 1.0
+python3 -m modules.runner train modules.cv.cnn_mnist 5 64 1.0
 
 # Evaluate on the test set
-python3 -m modules.runner test modules.computer-vision.cnn_mnist
+python3 -m modules.runner test modules.cv.cnn_mnist
 
 # Render a diagram of the model architecture (via torchview and graphviz)
-python3 -m modules.runner view modules.computer-vision.cnn_mnist
+python3 -m modules.runner view modules.cv.cnn_mnist
 ```
 
 ## Installing dependencies

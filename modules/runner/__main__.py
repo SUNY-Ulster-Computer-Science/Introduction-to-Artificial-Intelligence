@@ -21,7 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
         "module",
         nargs="?",
         default=None,
-        help='Dotted path to the module, e.g. "modules.deep-learning.mnist" (resolves to deep-learning/dnn_mnist.py)',
+        help='Dotted path to the module, e.g. "modules.dl.mnist" (resolves to dl/dnn_mnist.py)',
     )
     parser.add_argument(
         "args",
