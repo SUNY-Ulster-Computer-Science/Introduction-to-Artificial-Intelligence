@@ -75,8 +75,9 @@ class BaseIMDBRunner(MLModule):
         vocab = self._get_vocab()
         # Map each token to its vocab id (falling back to <unk> for words never seen during training), then truncate/pad
         # to a fixed length so every example in a batch has the same shape.
+        # Left-pad so the model's final hidden states are not reading pad tokens at the right-most tokens.
         ids = [vocab.get(tok, vocab[UNK_TOKEN]) for tok in _tokenize(text)[: self._max_seq_len]]
-        ids += [vocab[PAD_TOKEN]] * (self._max_seq_len - len(ids))
+        ids = [vocab[PAD_TOKEN]] * (self._max_seq_len - len(ids)) + ids
         return ids
 
     def _collate(self, examples: list[dict]) -> tuple[torch.Tensor, torch.Tensor]:
