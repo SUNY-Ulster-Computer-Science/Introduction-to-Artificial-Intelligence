@@ -30,8 +30,8 @@ def _tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
-class BaseIMDBClassifier(MLModule):
-    """Simple RNN text classifier. Implements all four runner commands."""
+class BaseIMDBRunner(MLModule):
+    """Simple IMDB text runner. Implements all four runner commands."""
 
     _model_class: type = None
     _model_path: Path = None

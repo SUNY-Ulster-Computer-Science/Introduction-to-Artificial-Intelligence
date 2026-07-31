@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from modules.ml_modules.mnist_classifier import BaseMNISTClassifier
+from modules.runner_modules.mnist_runner import BaseMNISTRunner
 
 MODULE_DIR = Path(__file__).parent
 
@@ -43,6 +43,6 @@ class ConvNet(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-class MNISTClassifier(BaseMNISTClassifier):
+class MNISTRunner(BaseMNISTRunner):
     _model_class: type = ConvNet
     _model_path: Path = MODULE_DIR / "cnn_mnist.pt"

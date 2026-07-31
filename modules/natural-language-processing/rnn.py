@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from modules.ml_modules.imdb_classifier import BaseIMDBClassifier
+from modules.runner_modules.imdb_runner import BaseIMDBRunner
 
 MODULE_DIR = Path(__file__).parent
 
@@ -41,7 +41,7 @@ class RNN(nn.Module):
         return F.log_softmax(logits, dim=1)
 
 
-class IMDBClassifier(BaseIMDBClassifier):
+class IMDBRunner(BaseIMDBRunner):
     _model_class: type = RNN
     _model_path: Path = MODULE_DIR / "rnn_imdb.pt"
     _vocab_path: Path = MODULE_DIR / "imdb_vocab.json"

@@ -59,8 +59,8 @@ def _get_dataloader(split: str, batch_size: int, shuffle: bool = False) -> DataL
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=_collate)
 
 
-class BaseMNISTClassifier(MLModule):
-    """CNN digit classifier for MNIST. Implements all four runner commands."""
+class BaseMNISTRunner(MLModule):
+    """Digit runner for MNIST. Implements all four runner commands."""
 
     _model_class: type = None
     _model_path: Path = None
