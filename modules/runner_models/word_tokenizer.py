@@ -18,7 +18,7 @@ class WordTokenizer:
 
     def train(self, texts: Iterable[str], vocab_size: int) -> None:
         if vocab_size < 2:
-            raise ValueError("vocab_size must be at least 2")
+            raise ValueError("vocab_size must be at least 2 (for <PAD> and <UNK>)")
 
         # Count frequencies of all whitespace-separated words across texts
         word_counts: Counter[str] = Counter()
@@ -40,7 +40,7 @@ class WordTokenizer:
 
         self.vocab_size = next_id
 
-    def encode(self, text: str, max_length: int | None = None, pad_to_max: bool = False) -> list[int]:
+    def encode(self, text: str, max_length: int | None = None, padding: bool = False) -> list[int]:
         # Fallback defaults to 1 (<UNK>)
         ids = [self.word_to_id.get(word, 1) for word in text.split()]
 
@@ -50,7 +50,7 @@ class WordTokenizer:
         if len(ids) > max_length:
             # Truncate down to max length
             ids = ids[:max_length]
-        elif len(ids) < max_length and pad_to_max:
+        elif len(ids) < max_length and padding:
             # Pad out to max length using ID 0 (<PAD>)
             ids += [0] * (max_length - len(ids))
 
