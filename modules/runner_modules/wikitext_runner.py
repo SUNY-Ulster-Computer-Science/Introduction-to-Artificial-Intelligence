@@ -16,19 +16,9 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
 from modules.runner.base import MLModule
+from modules.runner_models.bpe_tokenizer import BPETokenizer
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-UNK_TOKEN = "<unk>"
-
-# Very simple word tokenizer: lowercase, keep runs of letters/apostrophes.
-_TOKEN_RE = re.compile(r"[a-z']+")
-
-
-def _tokenize(text: str) -> list[str]:
-    """A simple tokenizer which splits by words and apostrophes."""
-
-    return _TOKEN_RE.findall(text.lower())
 
 
 class _ChunkedLMDataset(Dataset):
@@ -57,7 +47,7 @@ class BaseWikitextRunner(MLModule):
 
     _model_class: type = None
     _model_path: Path = None
-    _vocab_path: Path = None
+    _tokenizer_path: Path = None
     _dataset_id: str = "Salesforce/wikitext"
     _dataset_config: str = "wikitext-2-raw-v1"
     _text_column: str = "text"
@@ -66,34 +56,29 @@ class BaseWikitextRunner(MLModule):
 
     def __init__(self) -> None:
         self._model: nn.Module | None = None
-        self._vocab: dict[str, int] | None = None
+        self._tokenizer: BPETokenizer | None = None
 
-    def _get_vocab(self) -> dict[str, int]:
-        """Fetch the vocab JSON if it is already built."""
+    def _load_tokenizer(self) -> BPETokenizer:
+        """Fetch the tokenizer from disk if it is already built."""
 
-        if self._vocab is not None:
-            return self._vocab
-        if not self._vocab_path.exists():
-            raise FileNotFoundError(f"No vocabulary found at {self._vocab_path}. Run 'train' first.")
-        self._vocab = json.loads(self._vocab_path.read_text())
-        return self._vocab
+        if self._tokenizer is not None:
+            return self._tokenizer
+        if not self._tokenizer_path.exists():
+            raise FileNotFoundError(f"No vocabulary found at {self._tokenizer_path}. Run 'train' first.")
+        self._tokenizer = BPETokenizer.load(self._tokenizer_path)
+        return self._tokenizer
 
-    def _build_vocab(self, lines: list[str]) -> dict[str, int]:
+    def _train_tokenizer(self, lines: list[str]) -> BPETokenizer:
         """Builds a vocabulary based on the contents of the dataset."""
 
-        counts = Counter()
-        for line in tqdm.tqdm(lines, desc="Building vocabulary", unit="line"):
-            counts.update(_tokenize(line))
-
-        vocab = {UNK_TOKEN: 0}
-        for token, _ in counts.most_common(self._max_vocab_size - len(vocab)):
-            vocab[token] = len(vocab)
-        return vocab
+        tokenizer = BPETokenizer()
+        tokenizer.train(lines, self._max_vocab_size)
+        return tokenizer
 
     def _tokenize_corpus(self, split: str) -> list[int]:
         """Tokenize an entire dataset split into one flat stream of token ids."""
 
-        vocab = self._get_vocab()
+        tokenizer = self._load_tokenizer()
         raw = load_dataset(self._dataset_id, self._dataset_config, split=split)
 
         tokens: list[int] = []
@@ -101,7 +86,7 @@ class BaseWikitextRunner(MLModule):
             text = row[self._text_column]
             if not text.strip():
                 continue  # WikiText includes blank lines and section headers
-            tokens.extend(vocab.get(tok, vocab[UNK_TOKEN]) for tok in _tokenize(text))
+            tokens.extend(tokenizer.encode(text))
         return tokens
 
     def _get_dataloader(self, split: str, batch_size: int, shuffle: bool = False) -> DataLoader:
@@ -126,8 +111,8 @@ class BaseWikitextRunner(MLModule):
         if self._model is not None:
             return self._model
 
-        vocab = self._get_vocab()
-        model = self._model_class(vocab_size=len(vocab)).to(DEVICE)
+        tokenizer = self._load_tokenizer()
+        model = self._model_class(vocab_size=tokenizer.vocab_size).to(DEVICE)
         if load_weights:
             if self._model_path.exists():
                 model.load_state_dict(torch.load(self._model_path, map_location=DEVICE))
@@ -147,15 +132,13 @@ class BaseWikitextRunner(MLModule):
         parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
         args = parser.parse_args(args)
 
-        # Build (or reuse) the vocabulary from the training split only.
-        if self._vocab_path.exists():
-            self._vocab = json.loads(self._vocab_path.read_text())
-        else:
+        # Build the vocabulary from the training split only.
+        if not self._tokenizer_path.exists():
             raw_train = load_dataset(self._dataset_id, self._dataset_config, split="train")
-            self._vocab = self._build_vocab(raw_train[self._text_column])
-            self._vocab_path.parent.mkdir(parents=True, exist_ok=True)
-            self._vocab_path.write_text(json.dumps(self._vocab))
-            print(f"Vocabulary of {len(self._vocab)} tokens saved to {self._vocab_path}")
+            tokenizer = self._train_tokenizer(raw_train[self._text_column])
+            self._tokenizer_path.parent.mkdir(parents=True, exist_ok=True)
+            tokenizer.save(self._tokenizer_path)
+            print(f"Vocabulary of {tokenizer.vocab_size} tokens saved to {self._tokenizer_path}")
 
         train_loader = self._get_dataloader("train", batch_size=args.batch_size, shuffle=True)
 
@@ -197,7 +180,7 @@ class BaseWikitextRunner(MLModule):
         parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=64)
         args = parser.parse_args(args)
 
-        self._get_vocab()  # Fail fast with a clear error if train hasn't run yet
+        self._load_tokenizer()  # Fail fast with a clear error if train hasn't run yet
         test_loader = self._get_dataloader("test", batch_size=args.batch_size, shuffle=False)
 
         model = self._load_model()
@@ -230,13 +213,13 @@ class BaseWikitextRunner(MLModule):
         parser.add_argument("-t", "--temperature", type=float, help="The temperature to use for sampling", default=0.8)
         args = parser.parse_args(args)
 
-        vocab = self._get_vocab()
-        inv_vocab = {idx: tok for tok, idx in vocab.items()}
+        tokenizer = self._load_tokenizer()
+        inv_vocab = {idx: tok for tok, idx in tokenizer.items()}
 
         model = self._load_model()
         model.eval()  # Set model to evaluation mode
 
-        generated = [vocab.get(tok, vocab[UNK_TOKEN]) for tok in _tokenize(args.prompt)]
+        generated = tokenizer.encode(args.prompt)
         if not generated:
             print("Error: prompt contained no recognizable tokens.", file=sys.stderr)
             sys.exit(1)
@@ -263,7 +246,7 @@ class BaseWikitextRunner(MLModule):
                     next_id = int(torch.multinomial(probs, num_samples=1).item())
                 generated.append(next_id)
 
-        generated_text = " ".join(inv_vocab.get(idx, UNK_TOKEN) for idx in generated)
+        generated_text = tokenizer.decode(generated)
         print(generated_text)
 
     def view(self, args: list[str]) -> None:
