@@ -1,3 +1,4 @@
+import argparse
 import io
 import json
 import re
@@ -121,9 +122,11 @@ class BaseIMDBRunner(MLModule):
         return model
 
     def train(self, args: list[str]) -> None:
-        epochs = int(args[0]) if len(args) > 0 else 3
-        batch_size = int(args[1]) if len(args) > 1 else 64
-        lr = float(args[2]) if len(args) > 2 else 1e-3
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-e", "--epochs", type=int, help="The number of epochs to train for", default=3)
+        parser.add_argument("-b", "--batch-size", type=int, help="The batch size for training", default=64)
+        parser.add_argument("-l", "--lr", type=float, help="The learning rate for training", default=1e-3)
+        args = parser.parse_args(args)
 
         # Build (or reuse) the vocabulary from the training split only.
         if self._vocab_path.exists():
@@ -135,17 +138,19 @@ class BaseIMDBRunner(MLModule):
             self._vocab_path.write_text(json.dumps(self._vocab))
             print(f"Vocabulary of {len(self._vocab)} tokens saved to {self._vocab_path}")
 
-        train_loader = self._get_dataloader("train", batch_size=batch_size, shuffle=True)
+        train_loader = self._get_dataloader("train", batch_size=args.batch_size, shuffle=True)
 
         model = self._load_model(load_weights=False)
 
         # Use Adam optimizer to even out gradients through model passes, Adam also schedules the learning rate
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
         model.train()  # Set model to train mode
-        epoch_bar = tqdm.tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch", position=0)
+        epoch_bar = tqdm.tqdm(range(1, args.epochs + 1), desc="Epochs", unit="epoch", position=0)
         for epoch in epoch_bar:
-            batch_bar = tqdm.tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}", unit="batch", position=1, leave=False)
+            batch_bar = tqdm.tqdm(
+                train_loader, desc=f"Epoch {epoch}/{args.epochs}", unit="batch", position=1, leave=False
+            )
             for input_ids, target in batch_bar:
                 # Send input_ids and target to device
                 input_ids, target = input_ids.to(DEVICE), target.to(DEVICE)
@@ -168,10 +173,12 @@ class BaseIMDBRunner(MLModule):
         print(f"Model saved to {self._model_path}")
 
     def test(self, args: list[str]) -> None:
-        batch_size = int(args[0]) if len(args) > 0 else 256
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-b", "--batch-size", type=int, help="The batch size for testing", default=256)
+        args = parser.parse_args(args)
 
         self._get_vocab()  # Fail fast with a clear error if train hasn't run yet
-        test_loader = self._get_dataloader("test", batch_size=batch_size, shuffle=False)
+        test_loader = self._get_dataloader("test", batch_size=args.batch_size, shuffle=False)
 
         model = self._load_model()
         model.eval()  # Set model to evaluation mode
@@ -197,18 +204,13 @@ class BaseIMDBRunner(MLModule):
         print(f"Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{n} ({accuracy:.2f}%)")
 
     def inference(self, args: list[str]) -> None:
-        if len(args) < 1:
-            print(
-                'Usage: python3 -m modules.runner inference modules.natural-language-processing.imdb_rnn "<text>"',
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-        text = args[0]
+        parser = argparse.ArgumentParser()
+        parser.add_argument("text", type=str, help="Text to classify")
+        args = parser.parse_args(args)
 
         model = self._load_model()
         model.eval()  # Set model to evaluation mode
-        input_ids = torch.tensor([self._encode(text)], dtype=torch.long).to(DEVICE)
+        input_ids = torch.tensor([self._encode(args.text)], dtype=torch.long).to(DEVICE)
         with torch.inference_mode():
             # Inference the model to get its prediction
             output = model(input_ids)
@@ -224,18 +226,23 @@ class BaseIMDBRunner(MLModule):
         import matplotlib.pyplot as plt
         from torchview import draw_graph
 
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-d", "--dpi", type=int, help="The DPI for the output image", default=300)
+        args = parser.parse_args(args)
+
         model = self._load_model()
-        dpi = int(args[0]) if len(args) > 0 else 300
 
         # A dummy batch of token ids (all padding) for torchview.
         dummy_input = torch.zeros((1, self._max_seq_len), dtype=torch.long, device=DEVICE)
         graph = draw_graph(model, input_data=dummy_input, device=DEVICE, expand_nested=True)
-        graph.visual_graph.attr(dpi=str(dpi))
+        graph.visual_graph.attr(dpi=str(args.dpi))
         png_bytes = graph.visual_graph.pipe(format="png")  # in-memory, no file written
         image = Image.open(io.BytesIO(png_bytes))
 
         plt.figure(
-            num=f"{self._model_class.__name__} Architecture", figsize=(image.width / dpi, image.height / dpi), dpi=dpi
+            num=f"{self._model_class.__name__} Architecture",
+            figsize=(image.width / args.dpi, image.height / args.dpi),
+            dpi=args.dpi,
         )
         plt.imshow(image)
         plt.axis("off")
