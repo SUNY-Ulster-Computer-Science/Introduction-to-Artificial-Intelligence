@@ -25,7 +25,7 @@ class ClassifierLSTM(nn.Module):
         _, (hidden, _) = self.lstm(embedded)
         hidden = hidden.squeeze(0)  # (1, batch, hidden_dim) -> (batch, hidden_dim)
         # Linear layer from the final hidden state to per-class scores
-        logits = self.linear(hidden)
+        logits = self.linear(hidden)  # (batch, num_classes)
         # Log softmax to convert the output into log probabilities for each class (log useful during loss evaluation)
         return F.log_softmax(logits, dim=1)
 
