@@ -12,4 +12,4 @@ class IMDBRunner(BaseIMDBRunner):
     _model_class: type = LSTM
     _model_path: Path = MODULE_DIR / "lstm_imdb.pt"
     _vocab_path: Path = MODULE_DIR / "imdb_vocab.json"
-    _label_names: list[str] = ["negative", "positive"]
+    _label_names: tuple[str] = ("negative", "positive")

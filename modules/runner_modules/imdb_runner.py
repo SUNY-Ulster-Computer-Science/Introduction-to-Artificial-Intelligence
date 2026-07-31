@@ -37,7 +37,7 @@ class BaseIMDBRunner(MLModule):
     _dataset_id: str = "stanfordnlp/imdb"
     _text_column: str = "text"
     _label_column: str = "label"
-    _label_names: list[str] = None
+    _label_names: tuple[str] = None
     _max_seq_len: int = 200
     _max_vocab_size: int = 20000
 
