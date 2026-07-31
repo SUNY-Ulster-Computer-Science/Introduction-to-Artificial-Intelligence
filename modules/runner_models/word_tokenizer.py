@@ -1,5 +1,3 @@
-"""A small word-level tokenizer."""
-
 from __future__ import annotations
 
 import json
@@ -10,35 +8,31 @@ from pathlib import Path
 
 class WordTokenizer:
     """Word-level tokenizer: builds a vocabulary from the most frequent words in a training corpus.
-
-    Unknown words are mapped to <UNK>.
+    Unknown words are mapped to <UNK> and sequences can be padded with <PAD>.
     """
 
     def __init__(self) -> None:
-        # Maps word string to a unique token integer ID
-        self.word_to_id: dict[str, int] = {"<UNK>": 0}
-        # Maps token integer ID to a word string
-        self.id_to_word: dict[int, str] = {0: "<UNK>"}
-        self.vocab_size: int = 1
+        self.word_to_id: dict[str, int] = {"<PAD>": 0, "<UNK>": 1}
+        self.id_to_word: dict[int, str] = {0: "<PAD>", 1: "<UNK>"}
+        self.vocab_size: int = 2
 
     def train(self, texts: Iterable[str], vocab_size: int) -> None:
-        if vocab_size < 1:
-            raise ValueError("vocab_size must be at least 1")
+        if vocab_size < 2:
+            raise ValueError("vocab_size must be at least 2")
 
         # Count frequencies of all whitespace-separated words across texts
         word_counts: Counter[str] = Counter()
         for text in texts:
             word_counts.update(text.split())
 
-        # Select the most common words to fill up the remaining vocabulary slots
-        max_words_to_add = vocab_size - 1
+        # Subtract 2 to leave room for both special tokens
+        max_words_to_add = vocab_size - 2
         most_common = word_counts.most_common(max_words_to_add)
 
-        # Build vocabulary mappings
-        self.word_to_id = {"<UNK>": 0}
-        self.id_to_word = {0: "<UNK>"}
+        self.word_to_id = {"<PAD>": 0, "<UNK>": 1}
+        self.id_to_word = {0: "<PAD>", 1: "<UNK>"}
 
-        next_id = 1
+        next_id = 2
         for word, _ in most_common:
             self.word_to_id[word] = next_id
             self.id_to_word[next_id] = word
@@ -46,14 +40,31 @@ class WordTokenizer:
 
         self.vocab_size = next_id
 
-    def encode(self, text: str) -> list[int]:
-        # Split text by whitespace and map to IDs, defaulting to <UNK> (0)
-        return [self.word_to_id.get(word, 0) for word in text.split()]
+    def encode(self, text: str, max_length: int | None = None, pad_to_max: bool = False) -> list[int]:
+        # Fallback defaults to 1 (<UNK>)
+        ids = [self.word_to_id.get(word, 1) for word in text.split()]
 
-    def decode(self, ids: list[int]) -> str:
+        if max_length is None:
+            return ids
+
+        if len(ids) > max_length:
+            # Truncate down to max length
+            ids = ids[:max_length]
+        elif len(ids) < max_length and pad_to_max:
+            # Pad out to max length using ID 0 (<PAD>)
+            ids += [0] * (max_length - len(ids))
+
+        return ids
+
+    def decode(self, ids: list[int], skip_special_tokens: bool = True) -> str:
         # Map IDs back to words and join them with spaces
-        # Out-of-bounds IDs are safely fallback to <UNK>
-        return " ".join(self.id_to_word.get(token_id, "<UNK>") for token_id in ids)
+        words = []
+        for token_id in ids:
+            word = self.id_to_word.get(token_id, "<UNK>")
+            if skip_special_tokens and word == "<PAD>":
+                continue  # Skip padding tokens entirely during reconstruction
+            words.append(word)
+        return " ".join(words)
 
     def save(self, path: Path) -> None:
         data = {
