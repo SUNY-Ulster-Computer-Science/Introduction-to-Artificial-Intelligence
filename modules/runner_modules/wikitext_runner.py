@@ -227,6 +227,7 @@ class BaseWikitextRunner(MLModule):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("prompt", type=str, help="The prompt to generate from")
         parser.add_argument("-n", "--num-tokens", type=int, help="Number of tokens to generate", default=50)
+        parser.add_argument("-t", "--temperature", type=float, help="The temperature to use for sampling", default=0.8)
         args = parser.parse_args(args)
 
         vocab = self._get_vocab()
@@ -250,7 +251,16 @@ class BaseWikitextRunner(MLModule):
                 # Inference the model to get its prediction
                 output = model(input_ids)
                 next_token_logits = output[0, -1]
-                next_id = int(next_token_logits.argmax().item())
+
+                if args.temperature <= 0:
+                    # Use greedy decoding
+                    next_id = int(next_token_logits.argmax().item())
+                else:
+                    # Sample decoding
+                    probs = next_token_logits.exp()
+                    probs = probs.pow(1.0 / args.temperature)
+                    probs = probs / probs.sum()
+                    next_id = int(torch.multinomial(probs, num_samples=1).item())
                 generated.append(next_id)
 
         generated_text = " ".join(inv_vocab.get(idx, UNK_TOKEN) for idx in generated)
