@@ -122,7 +122,7 @@ class DecoderTransformer(nn.Module):
         # Final layer normalization and projection
         x = self.ln_final(x)
         logits = self.linear_out(x)
-        return logits  # (Batch, Seq_len, Vocab_size)
+        return F.log_softmax(logits, dim=-1)  # (Batch, Seq_len, Vocab_size)
 
     @torch.no_grad()
     def generate(self, start_tokens: torch.Tensor, max_new_tokens: int, temperature: float = 1.0) -> torch.Tensor:
