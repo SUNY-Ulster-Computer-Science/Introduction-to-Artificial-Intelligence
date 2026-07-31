@@ -1,7 +1,5 @@
 """Base class for runner-compatible ML modules."""
 
-from __future__ import annotations
-
 
 class MLModule:
     """Subclass this for every ML module used with the runner."""
