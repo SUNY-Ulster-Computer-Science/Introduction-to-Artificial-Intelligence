@@ -6,20 +6,25 @@ from torch import nn
 
 
 class NeuralNet(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, layer_dims: tuple[int]) -> None:
         super().__init__()
-        self.linear1 = nn.Linear(28 * 28, 128)
-        self.linear2 = nn.Linear(128, 64)
-        self.linear3 = nn.Linear(64, 10)
+        self.layers = nn.ModuleList([nn.Linear(layer_dims[i], layer_dims[i + 1]) for i in range(len(layer_dims) - 1)])
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        for layer in self.layers[:-1]:
+            # Linear layer with a ReLU activation between layers
+            x = F.relu(layer(x))
+        # Linear layer with a ReLU activation from the last hidden layer to output layer
+        x = self.layers[-1](x)
+        # Log softmax to convert the output into log probabilities for each class (log useful during loss evaluation)
+        return F.log_softmax(x, dim=1)
+
+
+class MNISTNeuralNet(NeuralNet):
+    def __init__(self) -> None:
+        super().__init__((28 * 28, 128, 64, 10))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Flatten the 2D image into a 1D tensor for the neural network to consume
         x = torch.flatten(x, 1)
-        # Linear layer with a ReLU activation from input to hidden layer 1
-        x = F.relu(self.linear1(x))
-        # Linear layer with a ReLU activation from hidden layer 1 to hidden layer 2
-        x = F.relu(self.linear2(x))
-        # Linear layer with a ReLU activation from hidden layer 2 to output layer
-        x = self.linear3(x)
-        # Log softmax to convert the output into log probabilities for each class (log useful during loss evaluation)
-        return F.log_softmax(x, dim=1)
+        return super().forward(x)
