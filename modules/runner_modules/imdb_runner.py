@@ -29,6 +29,7 @@ class BaseIMDBRunner(MLModule):
     _label_names: tuple[str] = None
     _max_seq_len: int = 200
     _max_vocab_size: int = 20000
+    _padding_side: str = "left"
 
     def __init__(self) -> None:
         self._model: nn.Module | None = None
@@ -42,6 +43,7 @@ class BaseIMDBRunner(MLModule):
         if not self._tokenizer_path.exists():
             raise FileNotFoundError(f"No vocabulary found at {self._tokenizer_path}. Run 'train' first.")
         self._tokenizer = WordTokenizer.load(self._tokenizer_path)
+        self._tokenizer.padding_side = self._padding_side
         return self._tokenizer
 
     def _train_tokenizer(self, lines: list[str]) -> WordTokenizer:

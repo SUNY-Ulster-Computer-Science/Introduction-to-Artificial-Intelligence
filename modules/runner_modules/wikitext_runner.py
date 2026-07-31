@@ -50,6 +50,7 @@ class BaseWikitextRunner(MLModule):
     _text_column: str = "text"
     _seq_len: int = 64
     _max_vocab_size: int = 20000
+    _padding_side: str = "left"
 
     def __init__(self) -> None:
         self._model: nn.Module | None = None
@@ -63,6 +64,7 @@ class BaseWikitextRunner(MLModule):
         if not self._tokenizer_path.exists():
             raise FileNotFoundError(f"No vocabulary found at {self._tokenizer_path}. Run 'train' first.")
         self._tokenizer = BPETokenizer.load(self._tokenizer_path)
+        self._tokenizer.padding_side = self._padding_side
         return self._tokenizer
 
     def _train_tokenizer(self, lines: list[str]) -> BPETokenizer:

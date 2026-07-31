@@ -22,6 +22,7 @@ class BPETokenizer:
         self.merges: dict[tuple[int, int], int] = {}
         # 1 pad token + 256 raw byte values = 257 base tokens before merges
         self.vocab_size: int = 257
+        self.padding_side = "right"
 
     def train(self, texts: Iterable[str], vocab_size: int) -> None:
         if vocab_size < 257:
@@ -87,7 +88,11 @@ class BPETokenizer:
         if len(ids) > max_length:
             ids = ids[:max_length]
         elif len(ids) < max_length and padding:
-            ids += [0] * (max_length - len(ids))
+            # Left pad out to max length using ID 0 (<PAD>)
+            if self.padding_side == "right":
+                ids += [0] * (max_length - len(ids))
+            else:
+                ids = [0] * (max_length - len(ids)) + ids
 
         return ids
 
