@@ -38,10 +38,32 @@ class BPETokenizer:
         for text in texts:
             for chunk in _PRETOKEN_RE.findall(text):
                 sequences.append([b + 1 for b in chunk.encode("utf-8")])
-        num_merges = vocab_size - 257
-        next_id = 257
 
-        # One-time full pass: build global pair counts, plus an index of which documents contain each pair.
+        next_id = self._merge_all_pairs(vocab_size, sequences)
+        self.vocab_size = next_id
+
+    @staticmethod
+    def _count_pairs(sequences: list[list[int]]) -> Counter:
+        counts: Counter = Counter()
+        for seq in sequences:
+            for a, b in itertools.pairwise(seq):
+                counts[(a, b)] += 1
+        return counts
+
+    @staticmethod
+    def _apply_merge(seq: list[int], pair: tuple[int, int], new_id: int) -> list[int]:
+        merged: list[int] = []
+        i = 0
+        while i < len(seq):
+            if i < len(seq) - 1 and (seq[i], seq[i + 1]) == pair:
+                merged.append(new_id)
+                i += 2
+            else:
+                merged.append(seq[i])
+                i += 1
+        return merged
+
+    def _build_global_pairs(self, sequences: list[list[int]]):
         pair_counts: Counter = Counter()
         pair_to_seqs: dict[tuple[int, int], set[int]] = {}
         for seq_idx, seq in enumerate(sequences):
@@ -49,9 +71,19 @@ class BPETokenizer:
                 pair_counts[pair] += count
                 pair_to_seqs.setdefault(pair, set()).add(seq_idx)
 
+        return pair_counts, pair_to_seqs
+
+    def _merge_all_pairs(self, vocab_size: int, sequences: list[list[int]]):
+        next_id = 257
+        num_merges = vocab_size - next_id
+
+        # One-time full pass: build global pair counts, plus an index of which documents contain each pair.
+        pair_counts, pair_to_seqs = self._build_global_pairs(sequences)
+
         for _ in tqdm.tqdm(range(num_merges), desc="Training BPE", unit="merge"):
             if not pair_counts:
                 break  # Corpus is fully merged down to single tokens: nothing left to merge
+
             best_pair = max(pair_counts, key=lambda p: (pair_counts[p], p))
             affected_seqs = set(pair_to_seqs.get(best_pair, set()))
 
@@ -79,28 +111,7 @@ class BPETokenizer:
             self.merges[best_pair] = next_id
             next_id += 1
 
-        self.vocab_size = next_id
-
-    @staticmethod
-    def _count_pairs(sequences: list[list[int]]) -> Counter:
-        counts: Counter = Counter()
-        for seq in sequences:
-            for a, b in itertools.pairwise(seq):
-                counts[(a, b)] += 1
-        return counts
-
-    @staticmethod
-    def _apply_merge(seq: list[int], pair: tuple[int, int], new_id: int) -> list[int]:
-        merged: list[int] = []
-        i = 0
-        while i < len(seq):
-            if i < len(seq) - 1 and (seq[i], seq[i + 1]) == pair:
-                merged.append(new_id)
-                i += 2
-            else:
-                merged.append(seq[i])
-                i += 1
-        return merged
+        return next_id
 
     def encode(self, text: str, max_length: int | None = None, padding: bool = False) -> list[int]:
         ids: list[int] = []
