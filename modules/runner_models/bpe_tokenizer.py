@@ -37,7 +37,7 @@ class BPETokenizer:
         sequences: list[list[int]] = []
         for text in texts:
             for chunk in _PRETOKEN_RE.findall(text):
-                sequences.append(list(chunk.encode("utf-8")))
+                sequences.append([b + 1 for b in chunk.encode("utf-8")])
         num_merges = vocab_size - 257
         next_id = 257
 
@@ -103,8 +103,7 @@ class BPETokenizer:
         return merged
 
     def encode(self, text: str, max_length: int | None = None, padding: bool = False) -> list[int]:
-        # Shift initial bytes up by 1
-        ids = [b + 1 for b in text.encode("utf-8")]
+        ids: list[int] = []
 
         for chunk in _PRETOKEN_RE.findall(text):
             ids.extend(self._encode_chunk(chunk))
@@ -116,7 +115,7 @@ class BPETokenizer:
         if len(ids) > max_length:
             ids = ids[:max_length]
         elif len(ids) < max_length and padding:
-            # Left pad out to max length using ID 0 (<PAD>)
+            # Left or right pad out to max length using ID 0 (<PAD>)
             if self.padding_side == "right":
                 ids += [0] * (max_length - len(ids))
             else:
@@ -129,7 +128,7 @@ class BPETokenizer:
         if cached is not None:
             return cached
 
-        chunk_ids = list(chunk.encode("utf-8"))
+        chunk_ids = [b + 1 for b in chunk.encode("utf-8")]
         while len(chunk_ids) >= 2:
             pairs_present = {(a, b) for a, b in itertools.pairwise(chunk_ids)}
             # Apply whichever merge was learned earliest (lowest assigned id among adjacent pairs still present).
