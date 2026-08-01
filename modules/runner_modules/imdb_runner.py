@@ -189,7 +189,7 @@ class BaseIMDBRunner(MLModule):
         input_ids = torch.tensor(tokenizer.encode(args.text), dtype=torch.long).to(DEVICE)
         with torch.inference_mode():
             # Inference the model to get its prediction
-            output = model(input_ids)
+            output = model(input_ids.unsqueeze(0))
             # Get the most likely element within the prediction
             pred = int(output.argmax(dim=1).item())
             # Get the model's confidence by transforming log probabilities back into probabilities
