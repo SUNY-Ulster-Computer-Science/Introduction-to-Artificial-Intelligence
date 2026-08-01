@@ -1,4 +1,4 @@
-"""A small byte-level BPE (byte-pair encoding) tokenizer."""
+"""A small byte-level BPE (byte-pair encoding) tokenizer with caching and padding support."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ class BPETokenizer:
         return pair_counts, pair_to_seqs
 
     def _merge_all_pairs(self, vocab_size: int, sequences: list[list[int]]):
-        next_id = 257
+        next_id = 257 + len(self.merges)
         num_merges = vocab_size - next_id
 
         # One-time full pass: build global pair counts, plus an index of which documents contain each pair.
