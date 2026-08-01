@@ -29,6 +29,13 @@ class BPETokenizer:
         self._encode_cache: dict[str, list[int]] = {}
 
     def train(self, texts: Iterable[str], vocab_size: int) -> None:
+        """Train the tokenizer by learning BPE merges over a corpus.
+
+        Args:
+            texts: Iterable of training strings to learn merges from.
+            vocab_size: Target vocabulary size, must be >= 257.
+        """
+
         self._encode_cache.clear()  # Old cached results are invalid once self.merges changes
         if vocab_size < 257:
             raise ValueError("vocab_size must be at least 257 (1 pad token + 256 base bytes)")
@@ -44,6 +51,14 @@ class BPETokenizer:
 
     @staticmethod
     def _count_pairs(sequences: list[list[int]]) -> Counter:
+        """Count all adjacent token id pairs across a list of sequences.
+
+        Args:
+            sequences: List of token id sequences to count pairs in.
+        Returns:
+            Counter mapping each (id_a, id_b) pair to its total count.
+        """
+
         counts: Counter = Counter()
         for seq in sequences:
             for a, b in itertools.pairwise(seq):
@@ -52,6 +67,16 @@ class BPETokenizer:
 
     @staticmethod
     def _apply_merge(seq: list[int], pair: tuple[int, int], new_id: int) -> list[int]:
+        """Replace all non-overlapping occurrences of a pair in a sequence with a new id.
+
+        Args:
+            seq: Input token id sequence.
+            pair: The (id_a, id_b) pair to merge.
+            new_id: The id to replace each occurrence of the pair with.
+        Returns:
+            New sequence with all occurrences of pair replaced by new_id.
+        """
+
         merged: list[int] = []
         i = 0
         while i < len(seq):
@@ -63,7 +88,17 @@ class BPETokenizer:
                 i += 1
         return merged
 
-    def _build_global_pairs(self, sequences: list[list[int]]):
+    def _build_global_pairs(self, sequences: list[list[int]]) -> tuple[Counter, dict[tuple[int, int], set[int]]]:
+        """Build global pair counts and a reverse index of which sequences contain each pair.
+
+        Args:
+            sequences: List of token id sequences to index.
+        Returns:
+            Tuple of (pair_counts, pair_to_seqs) where pair_counts maps each pair
+            to its total count, and pair_to_seqs maps each pair to the set of
+            sequence indices that contain it.
+        """
+
         pair_counts: Counter = Counter()
         pair_to_seqs: dict[tuple[int, int], set[int]] = {}
         for seq_idx, seq in enumerate(sequences):
@@ -73,7 +108,16 @@ class BPETokenizer:
 
         return pair_counts, pair_to_seqs
 
-    def _merge_all_pairs(self, vocab_size: int, sequences: list[list[int]]):
+    def _merge_all_pairs(self, vocab_size: int, sequences: list[list[int]]) -> int:
+        """Iteratively learn and apply the most frequent merge until the target vocab size is reached.
+
+        Args:
+            vocab_size: Target vocabulary size to train up to.
+            sequences: Pre-tokenized training sequences (already shifted to 1-indexed byte ids).
+        Returns:
+            The next available token id after all merges have been learned.
+        """
+
         next_id = 257 + len(self.merges)
         num_merges = vocab_size - next_id
 
@@ -114,6 +158,17 @@ class BPETokenizer:
         return next_id
 
     def encode(self, text: str, max_length: int | None = None, padding: bool = False) -> list[int]:
+        """Encode a string into a list of token ids.
+
+        Args:
+            text: Input string to encode.
+            max_length: If set, truncates or pads the output to exactly this length.
+            padding: If True and the output is shorter than max_length, pad to max_length using id 0. Padding side is
+                controlled by self.padding_side. Has no effect if max_length is None.
+        Returns:
+            List of integer token ids.
+        """
+
         ids: list[int] = []
 
         for chunk in _PRETOKEN_RE.findall(text):
@@ -135,6 +190,14 @@ class BPETokenizer:
         return ids
 
     def _encode_chunk(self, chunk: str) -> list[int]:
+        """Encode a single pre-tokenized chunk string into BPE token ids, using a cache.
+
+        Args:
+            chunk: A single whitespace-free or whitespace-only string chunk.
+        Returns:
+            List of BPE token ids for this chunk.
+        """
+
         cached = self._encode_cache.get(chunk)
         if cached is not None:
             return cached
@@ -156,7 +219,13 @@ class BPETokenizer:
         return chunk_ids
 
     def _id_to_bytes_table(self) -> dict[int, bytes]:
-        # Initialize table mapping IDs back to their original byte arrays
+        """Build a lookup table mapping every token id back to its raw byte sequence.
+
+        Returns:
+            Dict mapping token id to the bytes it represents. Id 0 maps to empty
+            bytes so pad tokens naturally vanish when joined.
+        """
+
         # ID 0 is explicitly empty bytes so it naturally vanishes if joined raw
         table = {0: b""}
         for i in range(256):
@@ -167,18 +236,32 @@ class BPETokenizer:
         return table
 
     def decode(self, ids: list[int], skip_special_tokens: bool = True) -> str:
+        """Decode a list of token ids back into a string.
+
+        Args:
+            ids: List of token ids to decode.
+            skip_special_tokens: If True, pad tokens (id 0) are removed before decoding.
+        Returns:
+            Decoded string. Any undecodeable byte sequences are replaced with the
+            Unicode replacement character.
+        """
+
         table = self._id_to_bytes_table()
 
         # Filter out the pad token ID (0) if requested
         if skip_special_tokens:
-            filtered_ids = [token_id for token_id in ids if token_id != 0]
-        else:
-            filtered_ids = ids
+            ids = [i for i in ids if i != 0]
 
-        raw = b"".join(table.get(i, b"") for i in filtered_ids)
+        raw = b"".join(table.get(i, b"") for i in ids)
         return raw.decode("utf-8", errors="replace")
 
     def save(self, path: Path) -> None:
+        """Serialize the tokenizer's merges and vocab size to a JSON file.
+
+        Args:
+            path: Destination file path to write to.
+        """
+
         data = {
             "vocab_size": self.vocab_size,
             "merges": [[a, b, new_id] for (a, b), new_id in self.merges.items()],
@@ -187,6 +270,14 @@ class BPETokenizer:
 
     @classmethod
     def load(cls, path: Path) -> BPETokenizer:
+        """Load a previously saved tokenizer from a JSON file.
+
+        Args:
+            path: Path to the JSON file written by save().
+        Returns:
+            A BPETokenizer with merges and vocab_size restored.
+        """
+
         data = json.loads(path.read_text())
         tokenizer = cls()
         tokenizer.vocab_size = data["vocab_size"]
