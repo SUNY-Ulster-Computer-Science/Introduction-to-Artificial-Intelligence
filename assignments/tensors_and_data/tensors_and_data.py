@@ -177,7 +177,7 @@ print(f"Mean intensity (R: {mean_red:.3f}  G: {mean_green:.3f}  B: {mean_blue:.3
 
 grayscale_image = None  # TODO
 
-torchvision.transforms.ToPILImage()(grayscale_image).show()
+torchvision.transforms.ToPILImage(mode="L")(grayscale_image).show()
 
 print(f"Grayscale intensity (R: {mean_red:.3f}  G: {mean_green:.3f}  B: {mean_blue:.3f})")
 
