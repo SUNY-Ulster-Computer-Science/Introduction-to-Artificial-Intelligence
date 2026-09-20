@@ -12,7 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from modules.runner.base import MLModule
+from models.runner.base import MLModule
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

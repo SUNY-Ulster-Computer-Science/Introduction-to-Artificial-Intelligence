@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from modules.runner_models.transformer import DecoderTransformer
-from modules.runner_modules.wikitext_runner import BaseWikitextRunner
+from models.runner_models.transformer import DecoderTransformer
+from models.runner_modules.wikitext_runner import BaseWikitextRunner
 
 MODULE_DIR = Path(__file__).parent
 

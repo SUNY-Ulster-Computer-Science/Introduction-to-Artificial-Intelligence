@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from modules.runner_models.lstm import ClassifierLSTM
-from modules.runner_modules.imdb_runner import BaseIMDBRunner
+from models.runner_models.lstm import ClassifierLSTM
+from models.runner_modules.imdb_runner import BaseIMDBRunner
 
 MODULE_DIR = Path(__file__).parent
 

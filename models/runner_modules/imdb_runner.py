@@ -11,8 +11,8 @@ from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader
 
-from modules.runner.base import MLModule
-from modules.runner_models.word_tokenizer import WordTokenizer
+from models.runner.base import MLModule
+from models.runner_models.word_tokenizer import WordTokenizer
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

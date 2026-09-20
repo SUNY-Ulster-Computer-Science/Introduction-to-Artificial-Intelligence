@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from modules.runner_models.dnn import MNISTNeuralNet
-from modules.runner_modules.mnist_runner import BaseMNISTRunner
+from models.runner_models.dnn import MNISTNeuralNet
+from models.runner_modules.mnist_runner import BaseMNISTRunner
 
 MODULE_DIR = Path(__file__).parent
 

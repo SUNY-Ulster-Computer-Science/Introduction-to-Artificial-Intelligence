@@ -12,8 +12,8 @@ from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-from modules.runner.base import MLModule
-from modules.runner_models.bpe_tokenizer import BPETokenizer
+from models.runner.base import MLModule
+from models.runner_models.bpe_tokenizer import BPETokenizer
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

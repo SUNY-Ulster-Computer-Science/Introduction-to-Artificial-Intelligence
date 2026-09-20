@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from modules.runner_models.rnn import LanguageModelRNN
-from modules.runner_modules.wikitext_runner import BaseWikitextRunner
+from models.runner_models.rnn import LanguageModelRNN
+from models.runner_modules.wikitext_runner import BaseWikitextRunner
 
 MODULE_DIR = Path(__file__).parent
 

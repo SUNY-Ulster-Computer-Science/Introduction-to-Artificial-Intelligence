@@ -2,15 +2,15 @@ import argparse
 import sys
 from pathlib import Path
 
-from modules.runner.loader import ModuleResolutionError, discover_modules, load_module_instance
+from models.runner.loader import ModuleResolutionError, discover_modules, load_module_instance
 
 VALID_COMMANDS = ("inference", "test", "train", "view", "list", "help")
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python3 -m modules.runner",
-        description="Central runner for machine learning modules.",
+        prog="python3 -m models.runner",
+        description="Central runner for machine learning models.",
     )
     parser.add_argument(
         "command",
@@ -21,7 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
         "module",
         nargs="?",
         default=None,
-        help='Dotted path to the module, e.g. "modules.dl.mnist" (resolves to dl/dnn_mnist.py)',
+        help='Dotted path to the module, e.g. "models.dl.mnist" (resolves to dl/dnn_mnist.py)',
     )
     parser.add_argument(
         "args",
@@ -32,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def print_module_list(base_dir: Path):
-    """Print the list of available modules.
+    """Print the list of available models.
 
     Args:
         base_dir: Path to the base directory."""

@@ -6,12 +6,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 
-from modules.runner.base import MLModule
+from models.runner.base import MLModule
 
 COMMANDS = ("train", "test", "inference", "view", "help")
 
-# Directories skipped when scanning for modules: the runner's own package, plus common non-project directories that
-# shouldn't be treated as modules.
+# Directories skipped when scanning for models: the runner's own package, plus common non-project directories that
+# shouldn't be treated as models.
 _SKIP_DIR_NAMES = {"runner", "__pycache__", ".git", ".venv", "venv", "env", "runner_modules"}
 
 
@@ -24,7 +24,7 @@ class NoModuleClassFound(ModuleResolutionError):
 
 
 def resolve_module_path(dotted_path: str, base_dir: Path) -> Path:
-    """Convert a dotted path like "modules.dl.mnist" into a file path like "modules/dl/dnn_mnist.py".
+    """Convert a dotted path like "models.dl.mnist" into a file path like "models/dl/dnn_mnist.py".
 
     Args:
         dotted_path: The dotted module path to resolve.
@@ -46,7 +46,7 @@ def resolve_module_path(dotted_path: str, base_dir: Path) -> Path:
 
 
 def load_module(dotted_path: str, base_dir: Path | None = None) -> ModuleType:
-    """Load a module file given its dotted path, e.g. "modules.dl.mnist".
+    """Load a module file given its dotted path, e.g. "models.dl.mnist".
 
     Args:
         dotted_path: The dotted module path to load.
@@ -63,7 +63,7 @@ def load_module(dotted_path: str, base_dir: Path | None = None) -> ModuleType:
     if not module_file.exists():
         raise ModuleResolutionError(f"Could not find module file for '{dotted_path}' (expected at: {module_file})")
 
-    # Unique internal module name to avoid collisions in sys.modules.
+    # Unique internal module name to avoid collisions in sys.models.
     internal_name = "runner_dynamic__" + dotted_path.replace(".", "__").replace("-", "_")
 
     spec = importlib.util.spec_from_file_location(internal_name, module_file)
@@ -181,14 +181,14 @@ class DiscoveredModule:
 
 
 def discover_modules(base_dir: Path | None = None) -> list[DiscoveredModule]:
-    """Scan base_dir for runner modules (files defining an MLModule subclass).
+    """Scan base_dir for runner models (files defining an MLModule subclass).
 
     Files that fail to load (missing dependency, syntax error, etc.) are still reported, with the error attached.
 
     Args:
         base_dir: The base directory to load the module from.
     Returns:
-        A list of discovered modules.
+        A list of discovered models.
     """
 
     base_dir = base_dir if base_dir is not None else Path.cwd()

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from modules.runner_models.cnn import ConvNet
-from modules.runner_modules.mnist_runner import BaseMNISTRunner
+from models.runner_models.cnn import ConvNet
+from models.runner_modules.mnist_runner import BaseMNISTRunner
 
 MODULE_DIR = Path(__file__).parent
 
