@@ -11,7 +11,7 @@ dependencies = [
     "pillow",
     "datasets",
     "tqdm",
-    "matplotlib"
+    "matplotlib",
 ]
 
 [tool.ruff]
