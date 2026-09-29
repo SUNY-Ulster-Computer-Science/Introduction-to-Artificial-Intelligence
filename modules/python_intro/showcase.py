@@ -90,7 +90,7 @@ fire_callback(lambda x: print("Callback! " * x))
 
 # Classes
 
-class Showcase:
+class Faz:
     def __init__(self, hars: int):
         self.hars = hars
 
@@ -109,7 +109,7 @@ class Showcase:
         return "Stringified!"
 
 
-s = Showcase(5)
-s.toreador()
+f = Faz(5)
+f.toreador()
 
-print(str(s))
+print(str(f))
