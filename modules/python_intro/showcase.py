@@ -3,7 +3,7 @@
 from typing import Callable
 
 
-# Variable assignment
+# ---- Variable assignment ----
 
 name = "Alice"
 age = 21
@@ -21,7 +21,7 @@ print(name)
 # print("hello" + 5)  # Will cause a TypeError
 
 
-# Collections
+# ---- Collections ----
 
 # Lists
 scores = [88, 72, 95, 61, 84]
@@ -52,7 +52,7 @@ student = {
 print(student["name"])  # Alice
 
 
-# Control Flow
+# ---- Control Flow ----
 
 # for loop
 for score in scores:
@@ -69,13 +69,13 @@ print()
 # Conditional
 if "hello" == "world":
     print("if")
-elif True == 1:
+elif "foo" == "foo":
     print("elif")  # elif
 else:
     print("else")
 
 
-# Functions
+# ---- Functions ----
 
 def is_even(num: int) -> bool:
     return num % 2 == 0
@@ -88,7 +88,7 @@ def fire_callback(callback: Callable[[int], None]):
 fire_callback(lambda x: print("Callback! " * x))
 
 
-# Classes
+# ---- Classes ----
 
 class Faz:
     def __init__(self, hars: int):
