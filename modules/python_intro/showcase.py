@@ -1,10 +1,9 @@
 """A showcase of basic Python features."""
 
-
-# Variable assignment
-
 from typing import Callable
 
+
+# Variable assignment
 
 name = "Alice"
 age = 21
