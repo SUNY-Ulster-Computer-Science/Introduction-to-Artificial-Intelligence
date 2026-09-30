@@ -12,6 +12,7 @@ dependencies = [
     "datasets",
     "tqdm",
     "matplotlib",
+    "pre-commit>=4.6.2",
 ]
 
 [tool.ruff]
