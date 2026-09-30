@@ -29,11 +29,3 @@ python3 -m models.runner test models.cv.cnn_mnist
 # Render a diagram of the model architecture (via torchview and graphviz)
 python3 -m models.runner view models.cv.cnn_mnist
 ```
-
-## Installing dependencies
-
-```bash
-pip install -e .
-# Or
-uv sync
-```
