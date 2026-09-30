@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     except NotImplementedError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-    except Exception as e:
+    except Exception as e:  # noqa
         print(
             f"Error while running '{namespace.command}' on '{namespace.module}': {e}",
             file=sys.stderr,

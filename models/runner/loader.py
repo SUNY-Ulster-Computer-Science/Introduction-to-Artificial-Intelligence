@@ -203,7 +203,7 @@ def discover_modules(base_dir: Path | None = None) -> list[DiscoveredModule]:
         except ModuleResolutionError as exc:
             results.append(DiscoveredModule(dotted_path=dotted_path, error=str(exc)))
             continue
-        except Exception as exc:
+        except Exception as exc:  # noqa
             results.append(DiscoveredModule(dotted_path=dotted_path, error=f"Failed to load: {exc}"))
             continue
 
