@@ -14,6 +14,7 @@ dependencies = [
     "matplotlib",
     "pre-commit>=4.6.2",
     "ruff>=0.16.9",
+    "pytest>=9.1.1",
 ]
 
 [tool.ruff]
