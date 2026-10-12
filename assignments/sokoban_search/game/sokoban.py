@@ -81,7 +81,7 @@ class Sokoban:
 
         return cls(percept.walls, percept.goals, percept.objects, True)
 
-    def legal_moves(self, objects: Objects) -> list[Action]:
+    def legal_actions(self, objects: Objects) -> list[Action]:
         """Legal actions when things are arranged as `objects`.
 
         Always returned in the order UP, DOWN, LEFT, RIGHT."""
@@ -131,6 +131,12 @@ class Sokoban:
     def steps(self) -> int:
         return self._steps
 
+    def goals(self) -> frozenset[Position]:
+        return self._goals
+
+    def objects(self) -> Objects:
+        return self._objects
+
     def reset(self) -> Percept:
         """Reset the world to its initial state."""
 
@@ -144,7 +150,7 @@ class Sokoban:
         if self._static:
             raise RuntimeError("Cannot update a static game")
 
-        if action not in self.legal_moves(self._objects):
+        if action not in self.legal_actions(self._objects):
             raise ValueError(f"Illegal action {action} from player position {self._objects.player}")
 
         self._objects = self.result(self._objects, action)
