@@ -3,6 +3,9 @@
 Same signature and conventions as bfs_search (see search.py and bfs.py):
     dfs_search(game: Sokoban, node_limit: int) -> SearchResult
 
+TODO:
+    Implement an depth-first search algorithm using the given templates.
+
 Hints:
   * The only big structural difference from BFS is which end of the frontier you take nodes from.
     A Python list works as a stack.

@@ -5,6 +5,9 @@ Same signature and conventions as bfs_search (see search.py and bfs.py):
 
 `heuristic` is a function h(problem, state). Order the frontier by f = g + h, where g is node.path_cost.
 
+TODO:
+    Implement an A* search algorithm using the given templates.
+
 Hints:
   * heapq is the standard-library priority queue. Heap entries are compared element by element, so add a tie-breaker
     counter (e.g. (f, counter, node)), Node objects cannot be compared.
