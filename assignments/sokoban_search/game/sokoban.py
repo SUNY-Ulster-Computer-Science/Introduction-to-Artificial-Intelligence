@@ -68,18 +68,18 @@ class Sokoban:
     Changed only by `reset` / `update`: `objects`, `steps`."""
 
     def __init__(self, walls: frozenset[Position], goals: frozenset[Position], start: Objects, static: bool) -> None:
-        self.walls = walls
-        self.goals = goals
-        self.start = start  # Save the original game starting state
-        self.objects = start
-        self.steps = 0
-        self.static = static  # Whether the same is mutable or not
+        self._walls = walls
+        self._goals = goals
+        self._start = start  # Save the original game starting state
+        self._objects = start
+        self._steps = 0
+        self._static = static  # Whether the same is mutable or not
 
     @classmethod
-    def from_percept(cls, percept: Percept, static: bool) -> Self:
+    def from_percept(cls, percept: Percept) -> Self:
         """Build a private copy of the world from a percept (an agent's model)."""
 
-        return cls(percept.walls, percept.goals, percept.objects, static)
+        return cls(percept.walls, percept.goals, percept.objects, True)
 
     def legal_moves(self, objects: Objects) -> list[Action]:
         """Legal actions when things are arranged as `objects`.
@@ -91,13 +91,13 @@ class Sokoban:
             dx, dy = action.delta
             target = Position(objects.player.x + dx, objects.player.y + dy)
             # The player cannot move into the walls
-            if target in self.walls:
+            if target in self._walls:
                 continue
 
             if target in objects.boxes:
                 beyond = (target.x + dx, target.y + dy)
                 # The player cannot move a box into a wall or another box
-                if beyond in self.walls or beyond in objects.boxes:
+                if beyond in self._walls or beyond in objects.boxes:
                     continue
 
             legal.append(action)
@@ -120,32 +120,35 @@ class Sokoban:
     def is_goal(self, objects: Objects) -> bool:
         """True when every box is on a goal."""
 
-        return objects.boxes == self.goals
+        return objects.boxes == self._goals
 
     def percept(self) -> Percept:
-        return Percept(self.walls, self.goals, self.objects)
+        return Percept(self._walls, self._goals, self._objects)
 
     def is_solved(self) -> bool:
-        return self.is_goal(self.objects)
+        return self.is_goal(self._objects)
+
+    def steps(self) -> int:
+        return self._steps
 
     def reset(self) -> Percept:
         """Reset the world to its initial state."""
 
-        self.objects = self.start
-        self.steps = 0
+        self._objects = self._start
+        self._steps = 0
         return self.percept()
 
     def update(self, action: Action) -> Percept:
         """Advance the world by one step."""
 
-        if self.static:
+        if self._static:
             raise RuntimeError("Cannot update a static game")
 
-        if action not in self.legal_moves(self.objects):
-            raise ValueError(f"Illegal action {action} from player position {self.objects.player}")
+        if action not in self.legal_moves(self._objects):
+            raise ValueError(f"Illegal action {action} from player position {self._objects.player}")
 
-        self.objects = self.result(self.objects, action)
-        self.steps += 1
+        self._objects = self.result(self._objects, action)
+        self._steps += 1
         return self.percept()
 
 
