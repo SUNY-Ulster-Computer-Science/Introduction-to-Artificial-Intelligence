@@ -114,6 +114,7 @@ A harness program has been provided to allow for easier debugging and visualizat
 python -m assignments.sokoban_search.harness                          # everything
 python -m assignments.sokoban_search.harness --algos bfs astar        # some algorithms
 python -m assignments.sokoban_search.harness --levels L3 L5           # some levels
+python -m assignments.sokoban_search.harness --display                # show game states
 ```
 
 For each algorithm and level the harness reports whether the puzzle was solved, the plan length, the nodes expanded,

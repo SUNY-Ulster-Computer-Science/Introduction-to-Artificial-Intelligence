@@ -43,6 +43,9 @@ class Position:
     x: int
     y: int
 
+    def __gt__(self, other):
+        return self.x + self.y > other.x + other.y
+
 
 @dataclass(frozen=True, slots=True)
 class Objects:
@@ -136,6 +139,9 @@ class Sokoban:
 
     def objects(self) -> Objects:
         return self._objects
+
+    def walls(self) -> frozenset[Position]:
+        return self._walls
 
     def reset(self) -> Percept:
         """Reset the world to its initial state."""

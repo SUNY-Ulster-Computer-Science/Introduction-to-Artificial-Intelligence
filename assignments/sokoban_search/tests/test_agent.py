@@ -1,7 +1,7 @@
 from ..agents import SearchAgent
 from ..game.search import SearchResult
 from ..game.sokoban import Action, Sokoban, parse_level
-from ..harness import ALGORITHMS, play
+from ..harness import ALGORITHMS, play_game
 
 U, D, R = Action.UP, Action.DOWN, Action.RIGHT
 
@@ -82,4 +82,4 @@ def test_works_end_to_end_with_provided_bfs(levels):
     for name in ("L1", "L2", "L3"):
         game = parse_level(levels[name])
         agent = SearchAgent(ALGORITHMS["bfs"], 200_000)
-        assert play(game, agent), name
+        assert play_game(game, agent), name
