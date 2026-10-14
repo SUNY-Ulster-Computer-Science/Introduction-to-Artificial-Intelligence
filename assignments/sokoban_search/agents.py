@@ -27,6 +27,7 @@ class SearchAgent:
         self._node_limit = node_limit
         self._planned_actions: list[Action] | None = None
         self._expanded_nodes: int = 0
+        self._plan_created = False
 
     def _plan(self, percept: Percept) -> SearchResult:
         raise NotImplementedError("TODO: Call the search function once and save the search result for acting")
@@ -38,9 +39,10 @@ class SearchAgent:
 
     def act(self, percept: Percept) -> Action | None:
         # Init plan on first action only
-        if self._planned_actions is None:
+        if not self._plan_created:
             search_result = self._plan(percept)
             self._planned_actions = search_result.plan
             self._expanded_nodes = search_result.nodes_expanded
+            self._plan_created = True  # Set to True so we only plan once
 
         raise NotImplementedError("TODO: Implement acting based on a percept")

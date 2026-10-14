@@ -95,7 +95,7 @@ class Sokoban:
                 continue
 
             if target in objects.boxes:
-                beyond = (target.x + dx, target.y + dy)
+                beyond = Position(target.x + dx, target.y + dy)
                 # The player cannot move a box into a wall or another box
                 if beyond in self._walls or beyond in objects.boxes:
                     continue
@@ -167,7 +167,7 @@ def parse_level(text: str) -> Sokoban:
     player: Position | None = None
     for r, line in enumerate(text.strip("\n").splitlines()):
         for c, ch in enumerate(line):
-            pos = Position(r, c)
+            pos = Position(c, r)
             if ch == "#":
                 walls.add(pos)
             elif ch == ".":
