@@ -71,19 +71,19 @@ def main() -> None:
     levels = load_levels()
     names = args.levels or list(levels)
 
-    print(f"{'level':<6}{'algo':<8}{'solved':<8}{'plan len':>9}{'expanded':>10}{'seconds':>9}")
-    print("-" * 50)
+    all_results = {}
     for level in names:
         for algo in args.algos:
-            try:
-                r = run_sample(algo, levels[level], DEFAULT_NODE_LIMIT)
-            except NotImplementedError as e:
-                print(f"{level:<6}{algo:<8}not implemented yet ({e})")
-                continue
+            result = run_sample(algo, levels[level], DEFAULT_NODE_LIMIT)
+            all_results[(level, algo)] = result
 
-            pl = "-" if r["plan_length"] is None else r["plan_length"]
-            print(f"{level:<6}{algo:<8}{r['solved']!s:<8}{pl!s:>9}{r['expanded']!s:>10}{r['seconds']:>9.2f}")
-        print()
+    print(f"{'level':<6}{'algo':<8}{'solved':<8}{'plan len':>9}{'expanded':>10}{'seconds':>9}")
+    print("-" * 50)
+    for (level, algo), result in all_results.items():
+        plan_len = "-" if result["plan_length"] is None else result["plan_length"]
+        print(
+            f"{level:<6}{algo:<8}{result['solved']!s:<8}{plan_len!s:>9}{result['expanded']!s:>10}{result['seconds']:>9.2f}"
+        )
 
 
 if __name__ == "__main__":
