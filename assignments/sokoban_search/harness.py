@@ -63,7 +63,6 @@ def display_game(game: Sokoban) -> None:
     else:
         grid[player.y][player.x] = "@"
 
-    print("Step: ", game.steps())
     for row in grid:
         print("".join(row))
 
@@ -72,7 +71,9 @@ def play_game(game: Sokoban, agent: SearchAgent, max_steps: int = 100_000, displ
     """Run one round of the game. Returns True if the puzzle was solved."""
 
     if display:
+        print("Initial game state")
         display_game(game)
+        print()
 
     percept = game.reset()
     for _ in range(max_steps):
@@ -82,7 +83,9 @@ def play_game(game: Sokoban, agent: SearchAgent, max_steps: int = 100_000, displ
 
         percept = game.update(action)
         if display:
+            print("Step: ", game.steps(), ", Action: ", action)
             display_game(game)
+            print()
 
         if game.is_solved():
             return True
@@ -119,8 +122,7 @@ def main() -> None:
     all_results = {}
     for level in names:
         for algo in args.algos:
-            if args.display:
-                print(f"Running game {level}-{algo}")
+            print(f"Running game {level}-{algo}...")
             result = run_sample(algo, levels[level], DEFAULT_NODE_LIMIT, display=args.display)
             all_results[(level, algo)] = result
 
