@@ -1,9 +1,8 @@
 import pytest
 
-from assignments.sokoban_search.game.search import SearchResult
-
 from ..astar import astar_search
 from ..bfs import bfs_search
+from ..game.search import SearchResult
 from .conftest import execute_plan, make_game
 
 LIMIT = 500_000

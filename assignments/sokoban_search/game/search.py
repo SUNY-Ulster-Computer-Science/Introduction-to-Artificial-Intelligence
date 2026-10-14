@@ -4,8 +4,7 @@ Every search algorithm in this assignment has the same signature:
 
     def some_search(game: Sokoban, node_limit: int) -> SearchResult
 
-* `game` a Sokoban instance used as your model of the world. Start from `game.start`, and use only the pure methods
-    `actions`, `result` and `is_goal`.
+* `game` a Sokoban instance used as your agent's model of the world.
 * `node_limit`  the maximum number of nodes the algorithm may expand.
 
 A *state* is an `Objects` value (player position and box positions). It is hashable, so it can go straight into a set or dict.
@@ -16,7 +15,8 @@ Counting convention (all algorithms follow it so results are comparable):
 * `nodes_expanded` counts every such node, including the final goal node.
 * The goal test happens when a node is removed from the frontier.
 * Every action costs 1, so a child's `path_cost` is its parent's plus 1.
-* If `nodes_expanded` reaches `node_limit` before a solution is found, stop and return a SearchResult with plan=None."""
+* If `nodes_expanded` reaches `node_limit` before a solution is found, stop and return a SearchResult with plan=None.
+* An example search can be found in `bfs_search`."""
 
 from dataclasses import dataclass
 

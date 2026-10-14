@@ -1,9 +1,10 @@
 """A* search.
 
 Same signature and conventions as bfs_search (see search.py and bfs.py):
-    astar_search(problem, node_limit, heuristic=None) -> SearchResult
+    astar_search(game: Sokoban, node_limit: int) -> SearchResult
 
-`heuristic` is a function h(problem, state). Order the frontier by f = g + h, where g is node.path_cost.
+`box_distance_heuristic` is a function h(game: Sokoban, state: Objects) which calculates the Manhattan distance to the
+nearest goal. Order the frontier by f = g + h, where g is node.path_cost.
 
 TODO:
     Implement an A* search algorithm using the given templates.
@@ -33,5 +34,5 @@ def box_distance_heuristic(game: Sokoban, state: Objects) -> int:
     return total
 
 
-def astar_search(problem, node_limit):
+def astar_search(game: Sokoban, node_limit: int):
     raise NotImplementedError("TODO: Implement an A* algorithm")
